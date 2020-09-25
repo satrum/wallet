@@ -4,7 +4,7 @@ import json
 def test1():
     s = requests.Session()
     URL = 'http://localhost:5000/api/signup'
-    params = json.dumps({'name': 'test2', 'email': 'test2@localhost.ru', 'password': 'Pa$$w0rd'})
+    params = json.dumps({'name': 'test1', 'email': 'test1@localhost.ru', 'password': 'Pa$$w0rd'})
     headers = {'Content-Type': 'application/json'}
     r = s.post(url=URL, data=params, headers=headers)
 
@@ -56,7 +56,7 @@ def test3(s=None):
 def test4(s):
     URL = 'http://localhost:5000/api/external_to_wallet'
     headers = {'Content-Type': 'application/json'}
-    params = json.dumps({'wallet_id': 2, 'amount': 115.6, 'details': 'Перевод из Тинькофф'})
+    params = json.dumps({'wallet_id': 1, 'amount': 10.0, 'details': 'Перевод из Тинькофф'})
     r = s.post(url=URL, data=params, headers=headers)
     print(r.status_code)
     print(r.headers)
@@ -66,7 +66,7 @@ def test4(s):
 def test5(s):
     URL = 'http://localhost:5000/api/wallet_to_wallet'
     headers = {'Content-Type': 'application/json'}
-    params = json.dumps({'wallet_id': 1, 'amount': 11.1})
+    params = json.dumps({'wallet_id': 2, 'amount': 4.5})
     r = s.post(url=URL, data=params, headers=headers)
     print(r.status_code)
     print(r.headers)
@@ -85,8 +85,10 @@ def test5(s):
 
 #test3()
 
+#auth, ext2w
 #s = test2()
 #test4(s)
 
+#auth, w2w
 s = test2()
 test5(s)

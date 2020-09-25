@@ -31,5 +31,7 @@ class Config:
     # Bank parameters
     BANK_PASS = environ.get('BANK_PASS')
     BANK_EMAIL = environ.get('BANK_EMAIL')
+    OPERATION_WAIT = environ.get('OPERATION_WAIT')
+    OPERATION_TRY = environ.get('OPERATION_TRY')
 
     #JSONIFY_PRETTYPRINT_REGULAR = True

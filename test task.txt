@@ -60,6 +60,20 @@ OK (sync) создание client+wallet: - стоит ли разбивать �
 	БД postgres
 	асинхронный фреймворк
 
+https://docs.docker.com/engine/reference/builder/#run
+https://docs.docker.com/compose/gettingstarted/
+https://docs.docker.com/compose/reference/run/
+
+source:
+    https://github.com/satrum/wallet
+
+fork:
+    https://github.com/toddbirchard/flasklogin-tutorial
+    https://hackersandslackers.com/flask-login-user-authentication/
+
+app:
+    http://localhost:5000/
+
 docker build -t roman/wallet .
 docker images
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE

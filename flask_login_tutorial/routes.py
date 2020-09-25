@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, redirect, url_for, jsonify, reques
 from flask_login import current_user, login_required, logout_user
 from .models import db, User, Wallet, Operation
 import datetime
+import time
 
 # Blueprint Configuration
 main_bp = Blueprint(
@@ -35,7 +36,7 @@ def logout():
 
 @main_bp.route('/api/wallet', methods=['GET'])
 @login_required
-def wallet():
+def wallet_info():
     user_id = current_user.id
     wallet = Wallet.query.filter_by(user_id=user_id).first()
     if wallet is None:
@@ -64,14 +65,39 @@ def external_to_wallet():
     elif amount <= 0:
         return jsonify({'error': 'amount not positive'}), 403
 
-    # check wallet
+    # check receiver wallet
     wallet_id = request.json.get('wallet_id')
     wallet = Wallet.query.filter_by(wallet_id=wallet_id).first()
     print('send to wallet :{}'.format(wallet_id))
     if wallet is None:
         return jsonify({'error': 'wallet not exists'}), 403
 
-    # create new operation and update wallet balance
+
+    #check receiver wallet operation_lock
+    # if lock=0 -> lock=1
+    # if lock=1 -> wait , read new lock state, in loop, until lock=0
+    wait = int(current_app.config['OPERATION_WAIT'])
+    try_count = int(current_app.config['OPERATION_TRY'])
+
+    current_count = 0
+    current_lock = wallet.lock_operation
+    print('wallet lock:{}'.format(current_lock))
+    while current_lock == 1:
+        print('wallet locked, wait')
+        time.sleep(wait)
+        if current_count < try_count:
+            wallet = Wallet.query.filter_by(wallet_id=wallet_id).first()
+            db.session.commit()
+            current_count += 1
+            current_lock = wallet.lock_operation
+            print('new wallet lock:{}'.format(current_lock))
+        else:
+            return jsonify({'error': 'wallet blocked too much time'}), 403
+    wallet.lock_operation = 1
+    db.session.commit()
+    print('wallet locked for operation')
+
+    # create new operation and update wallet balance, unlock wallet
     details = request.json.get('details', '')
     operation = Operation(
         wallet_id=wallet_id,
@@ -85,7 +111,9 @@ def external_to_wallet():
     db.session.add(operation)
     db.session.commit()
     wallet.balance += amount
+    wallet.lock_operation = 0
     db.session.commit()
+    print('wallet unlocked for operation')
     return jsonify({'status': 'OK', 'operation_id': operation.operation_id, 'wallet_id': wallet.wallet_id, 'balance': wallet.balance}), 200
 
 @main_bp.route('/api/wallet_to_wallet', methods=['POST'])
@@ -115,9 +143,38 @@ def wallet_to_wallet():
     if sender_wallet.balance<amount:
         return jsonify({'error': 'amount > balance on wallet'}), 403
 
-    # create new operations and update wallets balances
-    sender_wallet.balance -= amount
+    # check sender/receiver wallets operation_lock
+    # if lock=0 -> lock=1
+    # if lock=1 -> wait , read new lock state, in loop, until lock=0
+    wait = int(current_app.config['OPERATION_WAIT'])
+    try_count = int(current_app.config['OPERATION_TRY'])
+
+    current_count = 0
+    current_sender_lock = sender_wallet.lock_operation
+    current_receiver_lock = receiver_wallet.lock_operation
+    print('sender lock:{} receiver lock:{}'.format(current_sender_lock, current_receiver_lock))
+    while (current_sender_lock == 1) or (current_receiver_lock == 1):
+        print('wallet(s) locked, wait')
+        time.sleep(wait)
+        if current_count < try_count:
+            sender_wallet = Wallet.query.filter_by(user_id=user_id).first()
+            receiver_wallet = Wallet.query.filter_by(wallet_id=receiver_wallet_id).first()
+            db.session.commit()
+            current_count += 1
+            current_sender_lock = sender_wallet.lock_operation
+            current_receiver_lock = receiver_wallet.lock_operation
+            print('new lock sender:{} receiver:{}'.format(current_sender_lock, current_receiver_lock))
+        else:
+            return jsonify({'error': 'wallet blocked too much time'}), 403
+    sender_wallet.lock_operation = 1
+    receiver_wallet.lock_operation = 1
     db.session.commit()
+    print('sender and receiver wallets locked for operation')
+
+
+    # create new operations and update wallets balances
+    #sender_wallet.balance -= amount
+    #db.session.commit()
 
     sender_operation = Operation(
         wallet_id=sender_wallet.wallet_id,
@@ -143,8 +200,12 @@ def wallet_to_wallet():
     db.session.add(receiver_operation)
     db.session.commit()
 
+    sender_wallet.balance -= amount
+    sender_wallet.lock_operation = 0
     receiver_wallet.balance += amount
+    receiver_wallet.lock_operation = 0
     db.session.add(receiver_wallet)
     db.session.commit()
+    print('sender and receiver wallets unlocked for operation')
 
     return jsonify({'status': 'OK', 'operation_id': sender_operation.operation_id, 'wallet_id': sender_wallet.wallet_id, 'balance': sender_wallet.balance}), 200
