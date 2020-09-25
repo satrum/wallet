@@ -1,0 +1,71 @@
+config:
+ok database connection (sqlite))
+docker compose
+ok bank account (check on start)
+bank wallet
+
+ok client (client_id, auth data=email/password_hash, name)
+ok wallet (wallet_id, balance, usd, user_id, creation_time)
+ok operations (operation_id, timestamp, amount, debet=True/False, wallet_id, type=(зачисление(credit),перевод(credit+debet)), details, -finstatus, contragent_id)
+
+OK auth client:
+	https://hackersandslackers.com/flask-login-user-authentication/ flask-login
+	https://github.com/toddbirchard/flasklogin-tutorial github example
+	почистить шаблоны
+	сделать api вариант без форм
+	https://medium.com/@albertcito/test-your-api-with-postman-and-xsrf-token-59285107d5f7
+
+OK (sync) создание client+wallet: - стоит ли разбивать на 2 этапа? Может быть со временем у пользвоателя будет несколько кошельков и надо будет делать новый кошелек для существующего клиента
+	signup client (email/password)
+	signin client (check session)
+	wallet(client_id=client_id) not already exists
+	create wallet object (balance=0)
+	
+!!!(sync) зачисление на wallet:
+	auth bank wallet
+	from->bank_wallet_id, amount, to->wallet_id, details
+	check processing_token
+	check wallet_id
+	create debet/credit operations & change wallet balance
+	async task - send_mail to wallet.client_id.email
+
+!!!перевод wallet-to-wallet:
+	1. (sync) отправление со своего кошелька в один шаг (auth_token, amount, details, receiver_wallet_id)
+		signin client (check session)
+		client wallet exists
+		check balance (not blocked>=amount) - без проверок коммисий, единая валюта, с проверкой холдов
+		check receiver_wallet_id exists
+		create debet/credit operations & change wallet balance
+		async tasks - send_mail to client.email and receiver_wallet_id.client_id.email
+		1. sender_balance -
+		2. sender_operation
+		3. receiver_operation
+		4. receiver_balance +
+		
+	2. получение в 2 шага, отправка от client=2 к client=1:
+		client=1 - составление заявки на получение денег с другого кошелька
+		client=2 - подтверждение отправки денег на указанный кошелек, либо отмена заявки
+		еще не подтвержденные заявки должны через некоторое время закрываться (или нет)
+		
+нет в задании:
+	/api/wallet
+	    OK получение выписки по операциям
+	    OK получение баланса
+	отправление уведомлений (асинхронная задача)
+	холды
+	если добавить номер версии на wallet ? (если например 2 транзакции с одного кошелька то проверка баланса не поможет)
+	двухшагового перевода с созданием требования
+	вывода денег
+	ввода денег с транзакцией банковского кошелька
+	БД postgres
+	асинхронный фреймворк
+
+docker build -t roman/wallet .
+docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+roman/wallet        latest              ecfbe9275489        16 seconds ago      903MB
+
+или
+
+docker-compose build
+docker-compose run -p 127.0.0.1:5000:5000 web
