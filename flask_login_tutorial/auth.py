@@ -1,10 +1,10 @@
 """Routes for user authentication."""
-from flask import redirect, render_template, flash, Blueprint, request, url_for
+from flask import redirect, render_template, flash, Blueprint, request, url_for, abort, jsonify
 from flask_login import current_user, login_user
 from .forms import LoginForm, SignupForm
-from .models import db, User
+from .models import db, User, Wallet
 from .import login_manager
-
+import datetime
 
 # Blueprint Configuration
 auth_bp = Blueprint(
@@ -25,16 +25,21 @@ def signup():
     form = SignupForm()
     if form.validate_on_submit():
         existing_user = User.query.filter_by(email=form.email.data).first()
+        #print(existing_user)
         if existing_user is None:
-            user = User(
-                name=form.name.data,
-                email=form.email.data,
-                website=form.website.data
-            )
+            user = User(name=form.name.data, email=form.email.data, created_on=datetime.datetime.utcnow())
             user.set_password(form.password.data)
             db.session.add(user)
             db.session.commit()  # Create new user
             login_user(user)  # Log in as newly created user
+
+            #create first wallet
+            print('user_id:{} info: {} {} {} {} {}'.format(user.id, user.name, user.email, user.password, user.created_on, user.last_login))
+            wallet = Wallet(user_id=user.id)
+            db.session.add(wallet)
+            db.session.commit()
+            print('wallet user_id: {} wallet_id: {} balance: {}'.format(wallet.user_id, wallet.wallet_id, wallet.balance))
+
             return redirect(url_for('main_bp.dashboard'))
         flash('A user already exists with that email address.')
     return render_template(
@@ -45,6 +50,26 @@ def signup():
         body="Sign up for a user account."
     )
 
+@auth_bp.route('/api/signup', methods = ['POST'])
+def api_signup():
+    name = request.json.get('name')
+    email = request.json.get('email')
+    password = request.json.get('password')
+    if name is None or password is None or email is None:
+        abort(400)  # missing arguments
+
+    if User.query.filter_by(email=email).first() is None:
+        user = User(name=name, email=email, created_on=datetime.datetime.utcnow())
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        login_user(user)
+        wallet = Wallet(user_id=user.id)
+        db.session.add(wallet)
+        db.session.commit()
+        return jsonify({'name': user.name, 'email': user.email, 'user_id': user.id, 'wallet_id': wallet.wallet_id})
+    else:
+        abort(400)  # existing user
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -76,6 +101,17 @@ def login():
         body="Log in with your User account."
     )
 
+@auth_bp.route('/api/login', methods=['POST'])
+def api_login():
+    if current_user.is_authenticated:
+        return jsonify({'name': current_user.name, 'email': current_user.email})
+
+    user = User.query.filter_by(email=request.json.get('email')).first()
+    if user and user.check_password(password=request.json.get('password')):
+        login_user(user)
+        return jsonify({'name': user.name, 'email': user.email})
+    else:
+        abort(401)
 
 @login_manager.user_loader
 def load_user(user_id):

@@ -27,3 +27,9 @@ class Config:
     STATIC_FOLDER = 'static'
     TEMPLATES_FOLDER = 'templates'
     COMPRESSOR_DEBUG = environ.get('COMPRESSOR_DEBUG')
+
+    # Bank parameters
+    BANK_PASS = environ.get('BANK_PASS')
+    BANK_EMAIL = environ.get('BANK_EMAIL')
+
+    #JSONIFY_PRETTYPRINT_REGULAR = True
