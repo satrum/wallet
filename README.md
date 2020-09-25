@@ -1,25 +1,31 @@
-# wallet
-test task wallet system
+test task: simple wallet system
+
+    1. нужна консистентность данных
+    2. нужно обрабатывать быстро много транзакций
+    3. транзакции 2 типов - внесение средств на кошелек, перевод с кошелька на кошелек
+
+1 Приближение:
 
 
-docker-compose build
-
-docker-compose run -p 127.0.0.1:5000:5000 web
 
 
-forms:
+Запуск:
 
-/signup
+    docker-compose build
+    docker-compose run -p 127.0.0.1:5000:5000 web
 
-/login
 
-/logout
 
-/
+Формы для http://127.0.0.1:5000/ :
+    
+    /signup - регистрация name, email, password
+    /login - вход email, password
+    /logout - выход
+    / - страница после входа
 
 --------------------
 
-api:
+API:
 
 -----------------
 
