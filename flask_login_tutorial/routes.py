@@ -138,10 +138,8 @@ def wallet_to_wallet():
     elif receiver_wallet.user_id == user_id:
         return jsonify({'error': 'sender wallet is receiver wallet'}), 403
 
-    # check sender wallet
+    # get sender wallet
     sender_wallet = Wallet.query.filter_by(user_id=user_id).first()
-    if sender_wallet.balance<amount:
-        return jsonify({'error': 'amount > balance on wallet'}), 403
 
     # check sender/receiver wallets operation_lock
     # if lock=0 -> lock=1
@@ -166,6 +164,12 @@ def wallet_to_wallet():
             print('new lock sender:{} receiver:{}'.format(current_sender_lock, current_receiver_lock))
         else:
             return jsonify({'error': 'wallet blocked too much time'}), 403
+
+    # check sender wallet balance
+    if sender_wallet.balance < amount:
+        return jsonify({'error': 'amount > balance on wallet'}), 403
+
+    # lock wallets
     sender_wallet.lock_operation = 1
     receiver_wallet.lock_operation = 1
     db.session.commit()
