@@ -22,7 +22,7 @@ cookie = {'session': '.eJwlzjsOwjAMANC7ZGbwL3Hcy1RxYgvWlk6Iu1OJ9U3vU_Y84nyW7X1c8
 
 def test2(s=None):
     URL = 'http://localhost:5000/api/login'
-    params = json.dumps({'email': 'test2@localhost.ru', 'password': 'Pa$$w0rd'})
+    params = json.dumps({'email': 'test1@localhost.ru', 'password': 'Pa$$w0rd'})
     from config import Config
     #params = json.dumps({'email': Config.BANK_EMAIL, 'password': Config.BANK_PASS})
     headers = {'Content-Type': 'application/json'}
@@ -56,7 +56,7 @@ def test3(s=None):
 def test4(s):
     URL = 'http://localhost:5000/api/external_to_wallet'
     headers = {'Content-Type': 'application/json'}
-    params = json.dumps({'wallet_id': 1, 'amount': 10.0, 'details': 'Перевод из Тинькофф'})
+    params = json.dumps({'wallet_id': 2, 'amount': 10.0, 'details': 'Перевод из Тинькофф'})
     r = s.post(url=URL, data=params, headers=headers)
     print(r.status_code)
     print(r.headers)
@@ -66,7 +66,7 @@ def test4(s):
 def test5(s):
     URL = 'http://localhost:5000/api/wallet_to_wallet'
     headers = {'Content-Type': 'application/json'}
-    params = json.dumps({'wallet_id': 2, 'amount': 4.5})
+    params = json.dumps({'wallet_id': 2, 'amount': 1.0})
     r = s.post(url=URL, data=params, headers=headers)
     print(r.status_code)
     print(r.headers)

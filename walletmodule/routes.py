@@ -140,6 +140,8 @@ def wallet_to_wallet():
 
     # get sender wallet
     sender_wallet = Wallet.query.filter_by(user_id=user_id).first()
+    if sender_wallet is None:
+        return jsonify({'error': 'sender wallet not exists'}), 403
 
     # check sender/receiver wallets operation_lock
     # if lock=0 -> lock=1
